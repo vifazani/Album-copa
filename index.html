@@ -319,6 +319,25 @@ input.text-input:focus, textarea.import-area:focus{border-color:var(--blue);}
   word-break:break-all;
 }
 
+.file-picker-big{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;
+  border:2px dashed var(--line-2);
+  border-radius:12px;
+  padding:24px 16px;
+  cursor:pointer;
+  transition:all 0.15s;
+  text-align:center;
+  background:rgba(244,241,232,0.02);
+}
+.file-picker-big:hover, .file-picker-big:active{
+  border-color:var(--blue);
+  background:rgba(77,154,255,0.06);
+}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:'▸ ';transition:transform 0.2s;display:inline-block;}
+details[open] summary::before{content:'▾ ';}
+
 .legend{
   max-width:1200px;margin:14px auto 0;padding:12px 20px;
   display:flex;gap:14px;flex-wrap:wrap;
@@ -537,8 +556,8 @@ input.text-input:focus, textarea.import-area:focus{border-color:var(--blue);}
 <!-- TRADES VIEW -->
 <div class="view-section" id="view-trades">
   <div class="trades-header">
-    <button class="btn primary" id="btn-share-dups">📤 Compartilhar repetidas</button>
-    <button class="btn blue" id="btn-add-friend">👤 Adicionar lista de amigo</button>
+    <button class="btn primary" id="btn-share-dups">📤 Compartilhar minhas repetidas</button>
+    <button class="btn blue" id="btn-add-friend">📥 Importar lista de amigo</button>
   </div>
 
   <section class="trades-section">
@@ -1100,83 +1119,90 @@ function openShareChoiceModal({title, filename, content, payload, isTrade, name}
   const dupCount = isTrade ? Object.keys(payload.duplicates).length : 0;
   const missingCount = isTrade ? payload.missing.length : 0;
   const msgPreview = isTrade
-    ? `🎴 Lista de repetidas do Álbum Copa 2026 — ${name}\n${dupCount} figurinhas repetidas · ${missingCount} faltando\n\nImporte no app pra ver sugestões de troca.`
-    : `🎴 Minha coleção do Álbum Copa 2026 — ${name}`;
+    ? `🎴 Lista de repetidas — Álbum Copa 2026 (${name})\n${dupCount} repetidas · ${missingCount} faltando`
+    : `🎴 Minha coleção — Álbum Copa 2026 (${name})`;
 
+  // Detect share capability
   const hasNativeShare = !!navigator.share;
-  const canShareFile = hasNativeShare && navigator.canShare && (() => {
+  let canShareFile = false;
+  let testFile = null;
+  if(hasNativeShare && navigator.canShare){
     try{
-      const f = new File([content], filename, {type:'application/json'});
-      return navigator.canShare({files:[f]});
-    }catch(e){ return false; }
-  })();
+      testFile = new File([content], filename, {type:'application/json'});
+      canShareFile = navigator.canShare({files:[testFile]});
+    }catch(e){ canShareFile = false; }
+  }
+
+  // Build modal content based on capability — show user what will happen
+  const sizeKb = (new Blob([content]).size / 1024).toFixed(1);
+  let bodyHtml;
+  if(canShareFile){
+    bodyHtml = `
+      <div class="preview-filename">📎 ${filename} (${sizeKb} KB)</div>
+      <p style="font-size:13px;color:var(--ink-dim);line-height:1.5;margin:0;">
+        Toque em <strong style="color:var(--green);">Compartilhar arquivo</strong> abaixo → escolha <strong>WhatsApp</strong> na lista do celular → escolha o contato. O arquivo vai anexado no chat.
+      </p>
+    `;
+  } else {
+    bodyHtml = `
+      <div class="preview-filename">📎 ${filename} (${sizeKb} KB)</div>
+      <p style="font-size:13px;color:var(--ink-dim);line-height:1.5;margin:0;">
+        Seu navegador não suporta compartilhar arquivo direto. Toque em <strong style="color:var(--blue);">Baixar arquivo</strong>, abra o WhatsApp, e envie o arquivo baixado como <strong>anexo</strong> (📎) no chat do amigo.
+      </p>
+    `;
+  }
 
   openModal({
     title,
-    body: hasNativeShare
-      ? '👉 Use "Compartilhar via..." e escolha WhatsApp na lista — o arquivo vai anexado e o amigo importa direto.'
-      : 'Baixe o arquivo e envie pelo WhatsApp (anexo). Não cole o JSON como texto — vai cortar no caminho.',
-    content: `<div class="preview-filename">${filename}</div>`,
+    body: '',  // empty — content has everything (auto-hidden)
+    content: bodyHtml,
     actions:[]
   });
 
   const actEl = document.getElementById('modal-actions');
   actEl.innerHTML = '';
 
-  // Native share — best option on mobile (opens system picker with WhatsApp + file attached)
-  if(hasNativeShare){
+  if(canShareFile){
+    // PRIMARY (and only) action: native share with file
     const shareBtn = document.createElement('button');
     shareBtn.className = 'btn primary';
-    shareBtn.innerHTML = canShareFile ? '📤 Compartilhar arquivo via...' : '📤 Compartilhar via...';
+    shareBtn.style.flex = '1 1 100%';  // full width — single clear action
+    shareBtn.innerHTML = '📤 Compartilhar arquivo';
     shareBtn.addEventListener('click', async () => {
       try{
-        if(canShareFile){
-          const file = new File([content], filename, {type:'application/json'});
-          await navigator.share({ files:[file], title, text: msgPreview });
-        } else {
-          // Fallback: short text only (no JSON, would be truncated)
-          await navigator.share({ title, text: msgPreview + '\n\n(envio o arquivo em seguida)' });
-        }
+        const file = new File([content], filename, {type:'application/json'});
+        await navigator.share({ files:[file], title, text: msgPreview });
+        closeModal();
+        showToast('Arquivo enviado ✓');
       }catch(e){
-        if(e.name !== 'AbortError') showToast('Cancelado');
+        if(e && e.name === 'AbortError') return;  // user cancelled — stay quiet
+        console.error('Share failed:', e);
+        // Real error — fall back to download with explanation
+        showToast('Compartilhamento falhou: ' + (e?.message || 'erro'), 4000);
+        setTimeout(() => {
+          downloadFile(content, filename, 'application/json');
+          showToast('Arquivo baixado. Envie como anexo no WhatsApp.', 4000);
+        }, 500);
       }
     });
     actEl.appendChild(shareBtn);
+  } else {
+    // Fallback: device doesn't support file share — download is the only path
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'btn primary';
+    dlBtn.style.flex = '1 1 100%';
+    dlBtn.innerHTML = '💾 Baixar arquivo';
+    dlBtn.addEventListener('click', () => {
+      downloadFile(content, filename, 'application/json');
+      showToast('Arquivo baixado. Anexe no WhatsApp pelo botão 📎.', 4000);
+    });
+    actEl.appendChild(dlBtn);
   }
 
-  // Download — always works
-  const dlBtn = document.createElement('button');
-  dlBtn.className = 'btn blue';
-  dlBtn.innerHTML = '💾 Baixar arquivo';
-  dlBtn.addEventListener('click', () => {
-    downloadFile(content, filename, 'application/json');
-    showToast('Arquivo baixado. Envie como anexo no WhatsApp.', 3000);
-  });
-  actEl.appendChild(dlBtn);
-
-  // WhatsApp — só convite, sem JSON inline (que seria truncado)
-  const waBtn = document.createElement('button');
-  waBtn.className = 'btn whatsapp';
-  waBtn.innerHTML = '💬 WhatsApp (só aviso)';
-  waBtn.title = 'Abre WhatsApp com um aviso curto. O arquivo precisa ser anexado separadamente.';
-  waBtn.addEventListener('click', () => {
-    const shortText = msgPreview + '\n\n📎 Te envio o arquivo .json em seguida (anexe no chat — não cole como texto, é muito grande).';
-    window.open('https://wa.me/?text=' + encodeURIComponent(shortText), '_blank');
-    showToast('Abrindo WhatsApp — não esqueça de anexar o arquivo', 3000);
-  });
-  actEl.appendChild(waBtn);
-
-  // Copy — fallback, mas avisa que pode truncar em apps de mensagem
-  const cpBtn = document.createElement('button');
-  cpBtn.className = 'btn';
-  cpBtn.innerHTML = '📋 Copiar JSON';
-  cpBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(content).then(() => showToast('Copiado. Cole no e-mail ou Notes — não no WhatsApp.', 3000)).catch(() => showToast('Falha ao copiar'));
-  });
-  actEl.appendChild(cpBtn);
-
+  // Close button — secondary
   const closeBtn = document.createElement('button');
   closeBtn.className = 'btn';
+  closeBtn.style.flex = '1 1 100%';
   closeBtn.innerHTML = 'Fechar';
   closeBtn.addEventListener('click', () => closeModal());
   actEl.appendChild(closeBtn);
@@ -1186,10 +1212,19 @@ function openShareChoiceModal({title, filename, content, payload, isTrade, name}
 document.getElementById('btn-import').addEventListener('click', ()=>{
   openModal({
     title:'Importar coleção',
-    body:'Cole o JSON do backup ou escolha um arquivo. Isso substituirá sua coleção atual.',
+    body:'Selecione o arquivo .json do backup. Isso substituirá sua coleção atual.',
     content: `
-      <input type="file" id="import-file" accept="application/json,.json" style="margin-bottom:12px;color:var(--ink-dim);font-size:12px;">
-      <textarea class="import-area" id="import-text" placeholder='{"app":"albumCopa2026","data":{...}}'></textarea>
+      <label for="import-file" class="file-picker-big" id="import-file-label">
+        <div style="font-size:32px;margin-bottom:8px;">📎</div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;">Escolher arquivo .json</div>
+        <div style="font-size:12px;color:var(--ink-dim);" id="import-file-status">Toque para selecionar</div>
+      </label>
+      <input type="file" id="import-file" accept="application/json,.json,text/plain" style="display:none;">
+
+      <details style="margin-top:14px;">
+        <summary style="font-size:12px;color:var(--ink-dim);cursor:pointer;user-select:none;">Não tem o arquivo? Colar JSON manualmente</summary>
+        <textarea class="import-area" id="import-text" placeholder='Cole o conteúdo JSON aqui...' style="margin-top:8px;"></textarea>
+      </details>
     `,
     actions:[
       {label:'Cancelar', class:'', action:()=>closeModal()},
@@ -1197,18 +1232,27 @@ document.getElementById('btn-import').addEventListener('click', ()=>{
     ]
   });
   setTimeout(()=>{
-    document.getElementById('import-file').addEventListener('change', (e)=>{
+    const fileInput = document.getElementById('import-file');
+    const status = document.getElementById('import-file-status');
+    const label = document.getElementById('import-file-label');
+    fileInput.addEventListener('change', (e)=>{
       const file = e.target.files[0];
       if(!file) return;
       const reader = new FileReader();
-      reader.onload = ()=>{ document.getElementById('import-text').value = reader.result; };
+      reader.onload = ()=>{
+        const ta = document.getElementById('import-text');
+        if(ta) ta.value = reader.result;
+        status.textContent = '✓ ' + file.name;
+        status.style.color = 'var(--green)';
+        label.style.borderColor = 'var(--green)';
+      };
       reader.readAsText(file);
     });
   },50);
 });
 async function doImport(){
   const txt = document.getElementById('import-text').value.trim();
-  if(!txt){ showToast('Cole o conteúdo'); return; }
+  if(!txt){ showToast('Selecione um arquivo ou cole o JSON', 3000); return; }
   try{
     const obj = JSON.parse(txt);
     const incoming = obj.data || obj;
@@ -1218,8 +1262,11 @@ async function doImport(){
     if(obj.owner && !username) await saveUsername(obj.owner);
     closeModal();
     renderAll();
-    showToast('Coleção importada');
-  }catch(e){ showToast('JSON inválido'); }
+    showToast('Coleção importada ✓');
+  }catch(e){
+    const looksTruncated = txt.startsWith('{') && !txt.trim().endsWith('}');
+    showToast(looksTruncated ? 'JSON cortado — peça o arquivo .json original' : 'JSON inválido', 4000);
+  }
 }
 
 // ====== RESET ======
@@ -1288,7 +1335,12 @@ Use esse app pra controlar suas figurinhas, marcar repetidas e trocar comigo!
       shareBtn.addEventListener('click', async () => {
         try{
           await navigator.share({ title:'Álbum Copa 2026 — Tracker', text: shareText, url: appUrl });
-        }catch(e){}
+          closeModal();
+        }catch(e){
+          if(e && e.name === 'AbortError') return;
+          console.error('Share failed:', e);
+          showToast('Falhou: ' + (e?.message || 'erro') + '. Use "Copiar link".', 4000);
+        }
       });
       actEl.appendChild(shareBtn);
     }
@@ -1327,7 +1379,13 @@ Use esse app pra controlar suas figurinhas, marcar repetidas e trocar comigo!
         try{
           const file = new File([cleanHtml], filename, {type:'text/html'});
           await navigator.share({ files:[file], title:'Álbum Copa 2026 — Tracker', text: shareText });
-        }catch(e){}
+          closeModal();
+        }catch(e){
+          if(e && e.name === 'AbortError') return;
+          console.error('Share failed:', e);
+          showToast('Falhou: ' + (e?.message || 'erro') + '. Use "Baixar".', 4000);
+          setTimeout(() => downloadFile(cleanHtml, filename, 'text/html'), 200);
+        }
       });
       actEl.appendChild(shareBtn);
     }
@@ -1384,31 +1442,52 @@ document.getElementById('btn-add-friend').addEventListener('click', () => openAd
 function openAddFriendModal(existingFriend = null){
   const isUpdate = !!existingFriend;
   openModal({
-    title: isUpdate ? 'Atualizar lista de ' + existingFriend.name : 'Adicionar lista de amigo',
+    title: isUpdate ? 'Atualizar lista de ' + existingFriend.name : 'Importar lista de amigo',
     body: isUpdate
-      ? `Importe a nova lista de ${existingFriend.name}. A antiga será substituída.`
-      : 'Importe o arquivo .json que seu amigo exportou. ⚠️ Não cole texto do WhatsApp — o app corta no caminho.',
+      ? `Selecione o arquivo .json novo de ${existingFriend.name}. A lista antiga será substituída.`
+      : 'Selecione o arquivo .json que seu amigo enviou pelo WhatsApp.',
     content: `
       ${!isUpdate ? `
-        <div class="label-small">Nome do amigo (opcional — pego do arquivo se vazio)</div>
-        <input class="text-input" id="friend-name-input" placeholder="Ex: João" maxlength="40">
+        <div class="label-small">Nome do amigo (opcional)</div>
+        <input class="text-input" id="friend-name-input" placeholder="Deixe vazio para usar o nome do arquivo" maxlength="40">
       ` : ''}
-      <div class="label-small">📎 Selecionar arquivo .json (recomendado)</div>
-      <input type="file" id="friend-file" accept="application/json,.json" style="margin-bottom:14px;color:var(--ink-dim);font-size:12px;width:100%;">
-      <div class="label-small">Ou cole o JSON (não recomendado pra WhatsApp)</div>
-      <textarea class="import-area" id="friend-text" placeholder='{"app":"albumCopa2026","type":"trade-list",...}'></textarea>
+
+      <label for="friend-file" class="file-picker-big" id="friend-file-label">
+        <div style="font-size:32px;margin-bottom:8px;">📎</div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;">Escolher arquivo .json</div>
+        <div style="font-size:12px;color:var(--ink-dim);" id="friend-file-status">Toque para selecionar</div>
+      </label>
+      <input type="file" id="friend-file" accept="application/json,.json,text/plain" style="display:none;">
+
+      <details style="margin-top:14px;">
+        <summary style="font-size:12px;color:var(--ink-dim);cursor:pointer;user-select:none;">Não tem o arquivo? Colar JSON manualmente</summary>
+        <textarea class="import-area" id="friend-text" placeholder='Cole o conteúdo JSON aqui...' style="margin-top:8px;"></textarea>
+      </details>
     `,
     actions:[
       {label:'Cancelar', class:'', action:()=>closeModal()},
-      {label: isUpdate ? 'Atualizar' : 'Adicionar', class:'primary', action: () => doAddFriend(existingFriend)}
+      {label: isUpdate ? 'Atualizar' : 'Importar', class:'primary', action: () => doAddFriend(existingFriend)}
     ]
   });
   setTimeout(() => {
-    document.getElementById('friend-file').addEventListener('change', (e) => {
+    const fileInput = document.getElementById('friend-file');
+    const status = document.getElementById('friend-file-status');
+    const label = document.getElementById('friend-file-label');
+    fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if(!file) return;
       const reader = new FileReader();
-      reader.onload = () => { document.getElementById('friend-text').value = reader.result; };
+      reader.onload = () => {
+        const ta = document.getElementById('friend-text');
+        if(ta) ta.value = reader.result;
+        status.textContent = '✓ ' + file.name;
+        status.style.color = 'var(--green)';
+        label.style.borderColor = 'var(--green)';
+      };
+      reader.onerror = () => {
+        status.textContent = 'Erro ao ler arquivo';
+        status.style.color = 'var(--red)';
+      };
       reader.readAsText(file);
     });
   }, 50);
@@ -1825,7 +1904,9 @@ function formatRelativeDate(iso){
 // ====== Modal ======
 function openModal({title, body, content, actions}){
   document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-body').textContent = body;
+  const bodyEl = document.getElementById('modal-body');
+  bodyEl.textContent = body || '';
+  bodyEl.style.display = body ? '' : 'none';
   document.getElementById('modal-content').innerHTML = content || '';
   const actEl = document.getElementById('modal-actions');
   actEl.innerHTML = '';
