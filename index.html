@@ -153,6 +153,66 @@ header{
 .meta-value.red{color:var(--red);}
 .meta-value.gold{color:var(--gold);}
 
+/* Estimate card (coupon-collector statistics) */
+.estimate-card{
+  margin-top:14px;
+  background:linear-gradient(135deg, rgba(168,114,255,0.06), rgba(77,154,255,0.04));
+  border:1px solid var(--line-2);
+  border-radius:16px;
+  padding:18px 20px;
+}
+.estimate-header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  margin-bottom:14px;
+}
+.estimate-label{
+  font-size:12px;font-weight:700;letter-spacing:0.5px;color:var(--ink);
+  margin-bottom:2px;
+}
+.estimate-sublabel{
+  font-size:11px;color:var(--ink-dim);
+}
+.estimate-config-btn{
+  background:transparent;border:1px solid var(--line-2);color:var(--ink-dim);
+  width:32px;height:32px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all 0.15s;
+}
+.estimate-config-btn:hover{background:var(--line);color:var(--ink);}
+.estimate-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  margin-bottom:12px;
+}
+.estimate-item{
+  background:rgba(0,0,0,0.2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+}
+.estimate-item-label{
+  font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-dim);
+  margin-bottom:6px;
+}
+.estimate-item-value{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;line-height:1;letter-spacing:1px;
+  color:var(--ink);
+}
+.estimate-item-value.gold{color:var(--gold);}
+.estimate-item-value.blue{color:var(--blue);}
+.estimate-item-extra{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--ink-dim);
+  margin-top:4px;
+}
+.estimate-tip{
+  font-size:12px;color:var(--ink-dim);line-height:1.5;
+  background:rgba(244,197,66,0.06);
+  border-left:2px solid var(--gold);
+  padding:8px 12px;border-radius:4px;
+}
+.estimate-tip strong{color:var(--gold);}
+
 .filter-row{
   max-width:1200px;margin:14px auto 0;padding:0 20px;
   display:flex;gap:6px;flex-wrap:wrap;
@@ -483,7 +543,7 @@ details[open] summary::before{content:'▾ ';}
       <div class="brand-logo">★</div>
       <div class="brand-text">
         <h1>ÁLBUM COPA 2026</h1>
-        <p>Tracker · v3.0</p>
+        <p>Tracker · v3.1</p>
       </div>
     </div>
     <div class="header-actions">
@@ -527,6 +587,32 @@ details[open] summary::before{content:'▾ ';}
         <div class="meta-item"><div class="meta-label">Tenho</div><div class="meta-value green" id="meta-have">0</div></div>
         <div class="meta-item"><div class="meta-label">Faltam</div><div class="meta-value red" id="meta-missing">0</div></div>
         <div class="meta-item"><div class="meta-label">Repetidas</div><div class="meta-value gold" id="meta-dup">0</div></div>
+      </div>
+    </div>
+
+    <!-- Estimate card -->
+    <div class="estimate-card" id="estimate-card">
+      <div class="estimate-header">
+        <div>
+          <div class="estimate-label">📊 Estimativa estatística</div>
+          <div class="estimate-sublabel">Comprando pacotes (sem trocar)</div>
+        </div>
+        <button class="estimate-config-btn" id="estimate-config-btn" title="Configurar preço do pacote">⚙</button>
+      </div>
+      <div class="estimate-grid">
+        <div class="estimate-item">
+          <div class="estimate-item-label">Já comprei (aprox.)</div>
+          <div class="estimate-item-value blue" id="estimate-bought">—</div>
+          <div class="estimate-item-extra" id="estimate-bought-extra">—</div>
+        </div>
+        <div class="estimate-item">
+          <div class="estimate-item-label">Pacotes pra completar</div>
+          <div class="estimate-item-value gold" id="estimate-packs">—</div>
+          <div class="estimate-item-extra" id="estimate-packs-extra">—</div>
+        </div>
+      </div>
+      <div class="estimate-tip" id="estimate-tip">
+        💡 Trocar com amigos é essencial — completar só comprando fica caro pela "cauda longa" estatística.
       </div>
     </div>
   </section>
@@ -621,9 +707,17 @@ const STORAGE_KEY = 'albumCopa2026_v1';
 const FRIENDS_KEY = 'albumCopa2026_friends_v1';
 const USERNAME_KEY = 'albumCopa2026_username_v1';
 const INSTALL_DISMISSED_KEY = 'albumCopa2026_install_dismissed_v1';
+const PACK_CONFIG_KEY = 'albumCopa2026_pack_config_v1';
+
+// Album constants — Copa do Mundo 2026 album
+const ALBUM_TOTAL = 980;       // total unique stickers in the album (per Panini's pack)
+const PACK_SIZE = 7;           // stickers per pack
+const DEFAULT_PACK_PRICE = 7;  // R$ per pack (Panini Copa 2026)
+
 let state = {};
 let friends = [];
 let username = '';
+let packConfig = { price: DEFAULT_PACK_PRICE };
 
 const storageAdapter = {
   async get(key){
@@ -661,10 +755,18 @@ async function loadState(){
   try{
     username = (await storageAdapter.get(USERNAME_KEY)) || '';
   }catch(e){ username = ''; }
+  try{
+    const rawP = await storageAdapter.get(PACK_CONFIG_KEY);
+    if(rawP){
+      const parsed = JSON.parse(rawP);
+      if(parsed && typeof parsed.price === 'number' && parsed.price >= 0) packConfig = parsed;
+    }
+  }catch(e){}
 }
 async function saveState(){ try{ await storageAdapter.set(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
 async function saveFriends(){ try{ await storageAdapter.set(FRIENDS_KEY, JSON.stringify(friends)); }catch(e){} }
 async function saveUsername(n){ username = n; try{ await storageAdapter.set(USERNAME_KEY, n); }catch(e){} }
+async function savePackConfig(){ try{ await storageAdapter.set(PACK_CONFIG_KEY, JSON.stringify(packConfig)); }catch(e){} }
 
 function getCount(id){ return state[id] || 0; }
 function setCount(id, n){
@@ -972,6 +1074,134 @@ function renderStats(){
   document.getElementById('meta-have').textContent = s.have;
   document.getElementById('meta-missing').textContent = s.missing;
   document.getElementById('meta-dup').textContent = s.dup;
+  renderEstimate(s);
+}
+
+// ====== COUPON COLLECTOR ESTIMATE ======
+// Model: each sticker in a pack is drawn i.i.d. uniformly from ALBUM_TOTAL=980.
+// Packs have PACK_SIZE=7 stickers. Stickers within and across packs are independent
+// with replacement (can repeat).
+// IMPORTANT: only stickers from groups A-L (12*4*20=960) + FWC (20) = 980 are sold
+// in Panini packs. The 14 Coca-Cola stickers are promotional (cans/products) and
+// don't come in packs — they're excluded from the estimate.
+function harmonic(n){
+  if(n <= 0) return 0;
+  let h = 0;
+  for(let i = 1; i <= n; i++) h += 1 / i;
+  return h;
+}
+
+function expectedPacksToComplete(haveUnique){
+  if(haveUnique < 0) haveUnique = 0;
+  if(haveUnique >= ALBUM_TOTAL) return 0;
+  const missing = ALBUM_TOTAL - haveUnique;
+  const expectedStickers = ALBUM_TOTAL * harmonic(missing);
+  return expectedStickers / PACK_SIZE;
+}
+
+// Count only stickers that come in packs (exclude CC promotional stickers)
+function packStickerStats(){
+  let have = 0, dup = 0;
+  // Groups A-L
+  GROUPS.forEach(g => g.countries.forEach(c => {
+    for(let i = 1; i <= 20; i++){
+      const cnt = getCount(stickerId(c.code, i));
+      if(cnt >= 1) have++;
+      if(cnt >= 2) dup += (cnt - 1);
+    }
+  }));
+  // FWC (cover + FIFA history)
+  FWC_NUMBERS.forEach(n => {
+    const cnt = getCount('FWC_' + n);
+    if(cnt >= 1) have++;
+    if(cnt >= 2) dup += (cnt - 1);
+  });
+  return { have, dup, missing: ALBUM_TOTAL - have };
+}
+
+function fmtBRL(n){
+  if(!isFinite(n)) return '—';
+  if(n >= 1000) return 'R$ ' + Math.round(n).toLocaleString('pt-BR');
+  return 'R$ ' + n.toFixed(2).replace('.', ',');
+}
+function fmtInt(n){
+  if(!isFinite(n)) return '—';
+  return Math.round(n).toLocaleString('pt-BR');
+}
+
+function renderEstimate(_unusedStats){
+  // Use pack-only stats (excludes 14 Coca-Cola promotional stickers)
+  const ps = packStickerStats();
+  const totalAcquired = ps.have + ps.dup;
+  const packsBought = Math.ceil(totalAcquired / PACK_SIZE);
+  const packsToGo = expectedPacksToComplete(ps.have);
+  const price = packConfig.price || 0;
+
+  const boughtEl = document.getElementById('estimate-bought');
+  const boughtExtra = document.getElementById('estimate-bought-extra');
+  const packsEl = document.getElementById('estimate-packs');
+  const packsExtra = document.getElementById('estimate-packs-extra');
+  const tipEl = document.getElementById('estimate-tip');
+
+  if(!boughtEl) return; // safety (estimate card may not exist in some views)
+
+  // Already bought
+  boughtEl.textContent = fmtInt(packsBought);
+  boughtExtra.textContent = totalAcquired === 0
+    ? 'nenhuma figurinha ainda'
+    : `${fmtInt(totalAcquired)} figs · ${fmtBRL(packsBought * price)} gastos`;
+
+  // To complete
+  if(ps.missing === 0){
+    packsEl.textContent = '✓';
+    packsExtra.textContent = 'Álbum completo!';
+    tipEl.innerHTML = '🏆 <strong>Parabéns!</strong> Álbum 100% completo (figurinhas Coca-Cola não contam aqui).';
+  } else {
+    packsEl.textContent = fmtInt(packsToGo);
+    packsExtra.textContent = `≈ ${fmtBRL(packsToGo * price)} · ${fmtInt(packsToGo * PACK_SIZE)} figs`;
+
+    // Dynamic tip
+    if(ps.missing <= 5){
+      tipEl.innerHTML = `🎯 <strong>Reta final!</strong> Faltam só ${ps.missing}, mas a "cauda" do coupon collector é cruel — em média ${fmtInt(packsToGo)} pacotes pra fechar. <strong>Trocar resolve em minutos.</strong>`;
+    } else if(ps.missing <= 30){
+      tipEl.innerHTML = `⏳ Faltam ${ps.missing}. Comprar até completar custaria ~${fmtBRL(packsToGo * price)}. <strong>Trocar com amigos rende muito mais agora.</strong>`;
+    } else if(ps.have === 0){
+      tipEl.innerHTML = `📦 Do zero, em média <strong>${fmtInt(packsToGo)} pacotes</strong> (${fmtBRL(packsToGo * price)}) pra completar. Sem trocas, fica caro.`;
+    } else {
+      const totalCost = packsBought * price + packsToGo * price;
+      tipEl.innerHTML = `💰 Total estimado pra completar sem trocas: <strong>${fmtBRL(totalCost)}</strong>. Cada troca com amigo economiza ~${fmtBRL(price)}–${fmtBRL(price * 2)}.`;
+    }
+  }
+}
+
+// Config button: edit pack price
+document.addEventListener('DOMContentLoaded', () => {});  // placeholder
+
+function openPackConfigModal(){
+  openModal({
+    title:'Configurar pacote',
+    body:'Pacote Panini: 7 figurinhas. As 14 figurinhas Coca-Cola são promocionais (vêm nas garrafas) e não entram nesse cálculo.',
+    content: `
+      <div class="label-small">Preço médio do pacote (R$)</div>
+      <input class="text-input" id="pack-price-input" type="number" inputmode="decimal" step="0.50" min="0" value="${packConfig.price}" placeholder="7.00">
+      <div class="label-small" style="margin-top:8px;">Figurinhas por pacote</div>
+      <input class="text-input" type="number" value="${PACK_SIZE}" disabled style="opacity:0.6;">
+      <div class="label-small" style="margin-top:8px;">Total no álbum (sem Coca-Cola)</div>
+      <input class="text-input" type="number" value="${ALBUM_TOTAL}" disabled style="opacity:0.6;">
+    `,
+    actions:[
+      {label:'Cancelar', class:'', action:()=>closeModal()},
+      {label:'Salvar', class:'primary', action: async () => {
+        const v = parseFloat(document.getElementById('pack-price-input').value);
+        if(!isFinite(v) || v < 0){ showToast('Preço inválido'); return; }
+        packConfig.price = v;
+        await savePackConfig();
+        closeModal();
+        renderStats();
+        showToast('Preço atualizado');
+      }}
+    ]
+  });
 }
 function applyFilters(){
   document.querySelectorAll('.sticker').forEach(el=>{
@@ -1290,6 +1520,7 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
 
 // ====== SHARE THE APP (zerado) ======
 document.getElementById('btn-share-app').addEventListener('click', shareAppToFriends);
+document.getElementById('estimate-config-btn').addEventListener('click', openPackConfigModal);
 
 async function shareAppToFriends(){
   const appUrl = window.location.href.split('#')[0];
@@ -1460,8 +1691,11 @@ function openAddFriendModal(existingFriend = null){
       <input type="file" id="friend-file" accept="application/json,.json,text/plain" style="display:none;">
 
       <details style="margin-top:14px;">
-        <summary style="font-size:12px;color:var(--ink-dim);cursor:pointer;user-select:none;">Não tem o arquivo? Colar JSON manualmente</summary>
-        <textarea class="import-area" id="friend-text" placeholder='Cole o conteúdo JSON aqui...' style="margin-top:8px;"></textarea>
+        <summary style="font-size:12px;color:var(--ink-dim);cursor:pointer;user-select:none;">Colar texto manualmente (JSON ou mensagem de outro app)</summary>
+        <p style="font-size:11px;color:var(--ink-dim);margin:8px 0;line-height:1.4;">
+          Aceita o JSON deste app <strong>ou</strong> mensagens de outros apps no formato <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px;">MEX17 (x2)</code>, <code style="background:rgba(0,0,0,0.3);padding:1px 4px;border-radius:3px;">BRA 7</code>, etc.
+        </p>
+        <textarea class="import-area" id="friend-text" placeholder='Cole o JSON ou a mensagem do amigo aqui...' style="margin-top:8px;"></textarea>
       </details>
     `,
     actions:[
@@ -1493,65 +1727,164 @@ function openAddFriendModal(existingFriend = null){
   }, 50);
 }
 
+// Parse free-form text from other album apps (e.g. WhatsApp messages with
+// emoji headers and "MEX17 (x2)" patterns). Returns {dupList, dupCounts}
+// or null if nothing was found.
+function parseTextStickerList(text){
+  const validCodes = new Set(Object.keys(CODE_TO_COUNTRY));
+  // Country name -> code, for occasional "México 17" style references
+  const nameToCode = {};
+  Object.keys(CODE_TO_COUNTRY).forEach(code => {
+    const name = CODE_TO_COUNTRY[code].name;
+    nameToCode[name.toLowerCase()] = code;
+    // also strip accents for matching
+    const noAccent = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    nameToCode[noAccent] = code;
+  });
+
+  const found = {}; // stickerId -> count
+
+  // Pattern 1: 2-3 letter uppercase code + number + optional multiplier
+  // Matches: MEX17, MEX 17, MEX-17, MEX_17, MEX17 (x2), MEX17 x3, MEX17×2, CC1 (x2)
+  // Code: 2-3 uppercase letters (CC has 2). Number: 1-2 digits.
+  const upperText = text.toUpperCase();
+  const codePattern = /\b([A-Z]{2,3})[\s\-_:.]*?(\d{1,2})\b(?:[\s]*[\(\[]?[\s]*[X×x][\s]*(\d{1,2}))?/g;
+  let m;
+  while((m = codePattern.exec(upperText)) !== null){
+    const code = m[1];
+    const numStr = m[2];
+    if(!validCodes.has(code)) continue;
+    const id = canonicalStickerId(code, numStr);
+    if(!id) continue;
+    const mult = m[3] ? parseInt(m[3], 10) : 2;  // default: 2 (at least one extra)
+    const safeMult = Math.max(2, Math.min(20, mult));
+    found[id] = Math.max(found[id] || 0, safeMult);
+  }
+
+  // Pattern 2: Country name in Portuguese + number (e.g. "México 17", "Brasil 7")
+  // Process line by line to avoid greedy matches.
+  text.split(/\r?\n/).forEach(line => {
+    const lineLower = line.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    Object.keys(nameToCode).forEach(name => {
+      // Match: name followed by 1-2 digits, optionally multiplier
+      // Use word-boundary-ish detection
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`\\b${escaped}[\\s\\-]*(\\d{1,2})\\b(?:[\\s]*[\\(\\[]?[\\s]*[xX×][\\s]*(\\d{1,2}))?`, 'g');
+      let mm;
+      while((mm = re.exec(lineLower)) !== null){
+        const code = nameToCode[name];
+        const id = canonicalStickerId(code, mm[1]);
+        if(!id) continue;
+        const mult = mm[2] ? parseInt(mm[2], 10) : 2;
+        const safeMult = Math.max(2, Math.min(20, mult));
+        found[id] = Math.max(found[id] || 0, safeMult);
+      }
+    });
+  });
+
+  const dupList = Object.keys(found);
+  if(dupList.length === 0) return null;
+  return { dupList, dupCounts: found };
+}
+
+// Convert (code, numStr) → canonical stickerId, validating ranges
+function canonicalStickerId(code, numStr){
+  const num = parseInt(numStr, 10);
+  if(!isFinite(num)) return null;
+  if(code === 'FWC'){
+    // Special: '00' is valid, plus 1-19
+    if(numStr === '00' || numStr === '0') return 'FWC_00';
+    if(num >= 1 && num <= 19) return 'FWC_' + num;
+    return null;
+  }
+  if(code === 'CC'){
+    if(num >= 1 && num <= 14) return 'CC_' + num;
+    return null;
+  }
+  if(!CODE_TO_COUNTRY[code]) return null;
+  if(num >= 1 && num <= 20) return code + '_' + num;
+  return null;
+}
+
 async function doAddFriend(existingFriend){
   let txt = document.getElementById('friend-text').value.trim();
-  if(!txt){ showToast('Cole o JSON ou anexe o arquivo'); return; }
+  if(!txt){ showToast('Selecione o arquivo .json ou cole o texto', 3000); return; }
 
-  // Tolerant parsing: user may have pasted the WhatsApp message which contains
-  // a short header + JSON. Extract the {...} block.
+  let dupList = [];
+  let dupCountMap = {};
+  let missingRaw = [];
+  let ownerFromFile = null;
+  let parseMode = '';  // 'json' or 'text', for the toast feedback
+
+  // ----- TRY 1: JSON (from this app or compatible apps) -----
+  // First, try to extract a {...} block in case it's surrounded by header text
+  let jsonCandidate = txt;
   if(!txt.startsWith('{')){
     const firstBrace = txt.indexOf('{');
     const lastBrace = txt.lastIndexOf('}');
     if(firstBrace >= 0 && lastBrace > firstBrace){
-      txt = txt.slice(firstBrace, lastBrace + 1);
+      jsonCandidate = txt.slice(firstBrace, lastBrace + 1);
     }
   }
 
-  let parsed;
-  try{
-    parsed = JSON.parse(txt);
-  }catch(e){
-    // Detect truncated JSON (WhatsApp text limit cuts the message)
-    const looksTruncated = txt.startsWith('{') && !txt.trim().endsWith('}');
-    if(looksTruncated){
-      showToast('JSON cortado — o WhatsApp truncou. Peça o arquivo .json anexado.', 4000);
+  let jsonParsed = null;
+  try{ jsonParsed = JSON.parse(jsonCandidate); }catch(e){}
+
+  if(jsonParsed && (jsonParsed.duplicates || jsonParsed.dups || jsonParsed.data)){
+    parseMode = 'json';
+    const dupsRaw = jsonParsed.duplicates || jsonParsed.dups || jsonParsed.data;
+    missingRaw = jsonParsed.missing || [];
+    ownerFromFile = jsonParsed.owner || null;
+
+    if(Array.isArray(dupsRaw)){
+      dupsRaw.forEach(id => {
+        if(typeof id === 'string' && id.includes('_')){
+          dupList.push(id);
+          dupCountMap[id] = 2;
+        }
+      });
+    } else if(typeof dupsRaw === 'object'){
+      Object.keys(dupsRaw).forEach(id => {
+        const c = dupsRaw[id];
+        if(typeof c === 'number'){
+          if(c >= 2){ dupList.push(id); dupCountMap[id] = c; }
+        } else {
+          dupList.push(id);
+          dupCountMap[id] = 2;
+        }
+      });
+    }
+  }
+
+  // ----- TRY 2: Free-form text (from other apps) -----
+  if(dupList.length === 0){
+    const textResult = parseTextStickerList(txt);
+    if(textResult){
+      parseMode = 'text';
+      dupList = textResult.dupList;
+      dupCountMap = textResult.dupCounts;
+    }
+  }
+
+  // ----- VALIDATION -----
+  const valid = new Set(allStickerIds());
+  dupList = dupList.filter(id => valid.has(id));
+
+  if(dupList.length === 0){
+    // Couldn't parse anything
+    const looksLikeTruncatedJson = txt.startsWith('{') && !txt.trim().endsWith('}');
+    if(looksLikeTruncatedJson){
+      showToast('JSON cortado — peça o arquivo .json original', 4000);
+    } else if(jsonParsed){
+      showToast('JSON sem repetidas válidas', 3000);
     } else {
-      showToast('JSON inválido. Use o arquivo .json em vez de texto colado.', 4000);
+      showToast('Nenhuma figurinha encontrada no texto. Tente colar o arquivo .json.', 4000);
     }
     return;
   }
 
-  let dupsRaw = parsed.duplicates || parsed.dups || parsed.data;
-  let missingRaw = parsed.missing || [];
-  const ownerFromFile = parsed.owner || null;
-
-  if(!dupsRaw){ showToast('Lista de repetidas não encontrada no arquivo', 3000); return; }
-
-  let dupList = [];
-  let dupCountMap = {};
-  if(Array.isArray(dupsRaw)){
-    dupsRaw.forEach(id => {
-      if(typeof id === 'string' && id.includes('_')){
-        dupList.push(id);
-        dupCountMap[id] = 2;
-      }
-    });
-  } else if(typeof dupsRaw === 'object'){
-    Object.keys(dupsRaw).forEach(id => {
-      const c = dupsRaw[id];
-      if(typeof c === 'number'){
-        if(c >= 2){ dupList.push(id); dupCountMap[id] = c; }
-      } else {
-        dupList.push(id);
-        dupCountMap[id] = 2;
-      }
-    });
-  }
-
-  const valid = new Set(allStickerIds());
-  dupList = dupList.filter(id => valid.has(id));
-  if(dupList.length === 0){ showToast('Nenhuma figurinha repetida na lista'); return; }
-
+  // ----- NAME -----
   let name;
   if(existingFriend){
     name = existingFriend.name;
@@ -1560,6 +1893,7 @@ async function doAddFriend(existingFriend){
     name = inputName || ownerFromFile || 'Amigo';
   }
 
+  // ----- SAVE -----
   if(existingFriend){
     existingFriend.dups = dupList;
     existingFriend.dupCounts = dupCountMap;
@@ -1577,7 +1911,12 @@ async function doAddFriend(existingFriend){
   await saveFriends();
   closeModal();
   renderTradesView();
-  showToast(existingFriend ? `${name} atualizado` : `${name} adicionado`);
+  const action = existingFriend ? 'atualizado' : 'adicionado';
+  if(parseMode === 'text'){
+    showToast(`✓ ${name} ${action} (${dupList.length} repetidas detectadas no texto)`, 3500);
+  } else {
+    showToast(`✓ ${name} ${action} (${dupList.length} repetidas)`, 2500);
+  }
 }
 
 function renderTradesView(){
