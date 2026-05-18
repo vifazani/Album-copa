@@ -17,10 +17,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<!-- QR Code libs (loaded async, used only when user opens QR features) -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
 <style>
 :root{
   --bg:#0b0f1a;
@@ -581,104 +577,6 @@ details[open] summary::before{content:'▾ ';}
 .country-block.hidden{display:none;}
 .group-block.hidden{display:none;}
 
-/* QR display modal — fullscreen, white bg for max contrast */
-.qr-display-bg{
-  position:fixed; inset:0; z-index:300;
-  background:#ffffff;
-  display:none; flex-direction:column; align-items:center;
-  padding:24px 20px; overflow-y:auto;
-}
-.qr-display-bg.show{display:flex;}
-.qr-display-header{
-  width:100%; max-width:500px;
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:14px;
-}
-.qr-display-title{
-  font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:1.5px;
-  color:#0b0f1a;
-}
-.qr-display-close{
-  background:rgba(0,0,0,0.06); border:none; color:#0b0f1a;
-  width:38px; height:38px; border-radius:50%;
-  font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-}
-.qr-owner-name{
-  font-family:'DM Sans',sans-serif; font-size:14px; color:#666;
-  margin-bottom:12px; max-width:500px; text-align:center;
-}
-.qr-canvas-wrap{
-  background:#fff; padding:16px; border-radius:12px;
-  box-shadow:0 4px 16px rgba(0,0,0,0.15);
-  max-width:min(85vw, 420px);
-  display:flex; align-items:center; justify-content:center;
-}
-.qr-canvas-wrap canvas, .qr-canvas-wrap img{
-  display:block;
-  width:100%; height:auto;
-  max-width:100%;
-}
-.qr-summary{
-  margin-top:18px; max-width:500px;
-  font-family:'DM Sans',sans-serif; color:#333; text-align:center;
-  font-size:13px; line-height:1.5;
-}
-.qr-summary strong{color:#19c37d;}
-.qr-instruction{
-  margin-top:14px; padding:12px 16px; max-width:500px;
-  background:rgba(77,154,255,0.08); border:1px solid rgba(77,154,255,0.25);
-  border-radius:10px; font-size:13px; color:#0b0f1a; line-height:1.5;
-}
-
-/* Scanner modal — fullscreen with camera */
-.qr-scan-bg{
-  position:fixed; inset:0; z-index:300;
-  background:#000;
-  display:none; flex-direction:column;
-}
-.qr-scan-bg.show{display:flex;}
-.qr-scan-header{
-  position:absolute; top:0; left:0; right:0;
-  padding:16px 20px;
-  background:linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
-  display:flex; align-items:center; justify-content:space-between;
-  z-index:10;
-  color:#fff;
-}
-.qr-scan-title{
-  font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1.5px;
-}
-.qr-scan-close{
-  background:rgba(255,255,255,0.15); border:none; color:#fff;
-  width:38px; height:38px; border-radius:50%; font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-}
-.qr-scan-video-wrap{
-  flex:1; position:relative;
-  display:flex; align-items:center; justify-content:center;
-  overflow:hidden;
-}
-#qr-scan-video{
-  width:100%; height:100%; object-fit:cover;
-}
-.qr-scan-overlay{
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  pointer-events:none;
-}
-.qr-scan-target{
-  width:min(70vw, 280px); height:min(70vw, 280px);
-  border:3px solid rgba(255,255,255,0.9);
-  border-radius:24px;
-  box-shadow:0 0 0 9999px rgba(0,0,0,0.5);
-}
-.qr-scan-status{
-  position:absolute; bottom:40px; left:0; right:0; text-align:center;
-  color:#fff; font-size:14px; padding:0 20px;
-  text-shadow:0 1px 4px rgba(0,0,0,0.8);
-}
-
 /* Album toolbar (filter + search + expand controls) */
 .album-toolbar{
   max-width:1200px; margin:14px auto 0; padding:0 20px;
@@ -748,7 +646,7 @@ details[open] summary::before{content:'▾ ';}
       <div class="brand-logo">★</div>
       <div class="brand-text">
         <h1>ÁLBUM COPA 2026</h1>
-        <p>Tracker · v3.4</p>
+        <p>Tracker · v3.5</p>
       </div>
     </div>
     <div class="header-actions">
@@ -869,10 +767,8 @@ details[open] summary::before{content:'▾ ';}
 <!-- TRADES VIEW -->
 <div class="view-section" id="view-trades">
   <div class="trades-header">
-    <button class="btn whatsapp" id="btn-show-qr">📱 Mostrar meu QR</button>
-    <button class="btn blue" id="btn-scan-qr">📷 Escanear amigo</button>
-    <button class="btn" id="btn-share-dups">📤 Enviar por arquivo</button>
-    <button class="btn" id="btn-add-friend">📥 Importar arquivo</button>
+    <button class="btn primary" id="btn-share-dups">📤 Compartilhar minhas repetidas</button>
+    <button class="btn blue" id="btn-add-friend">📥 Importar lista de amigo</button>
   </div>
 
   <section class="trades-section">
@@ -901,33 +797,6 @@ details[open] summary::before{content:'▾ ';}
     <p id="modal-body">Corpo</p>
     <div id="modal-content"></div>
     <div class="modal-actions" id="modal-actions"></div>
-  </div>
-</div>
-
-<!-- QR Display: shows your trade list as a scannable QR -->
-<div class="qr-display-bg" id="qr-display">
-  <div class="qr-display-header">
-    <div class="qr-display-title">📱 MEU QR</div>
-    <button class="qr-display-close" id="qr-display-close">✕</button>
-  </div>
-  <div class="qr-owner-name" id="qr-owner-name">—</div>
-  <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
-  <div class="qr-summary" id="qr-summary">—</div>
-  <div class="qr-instruction">
-    📷 Peça pro seu amigo abrir a <strong>câmera dele</strong> (ou o app dele em "📷 Escanear amigo") e mirar nesse QR. A lista é importada na hora.
-  </div>
-</div>
-
-<!-- QR Scanner: opens camera to read friend's QR -->
-<div class="qr-scan-bg" id="qr-scan">
-  <div class="qr-scan-header">
-    <div class="qr-scan-title">📷 ESCANEAR QR</div>
-    <button class="qr-scan-close" id="qr-scan-close">✕</button>
-  </div>
-  <div class="qr-scan-video-wrap">
-    <video id="qr-scan-video" autoplay playsinline muted></video>
-    <div class="qr-scan-overlay"><div class="qr-scan-target"></div></div>
-    <div class="qr-scan-status" id="qr-scan-status">Procurando QR...</div>
   </div>
 </div>
 
@@ -1663,458 +1532,6 @@ function openExportModal(type){
   });
 }
 
-// ====== QR CODE — compact share via camera ======
-// Compact text format (smaller than JSON, easier to debug):
-//   "V:Name|D:CODE=nums...|M:CODE=nums..."
-// where:
-//   V = owner name
-//   D = duplicates (grouped by code, format: CODE=num,numXcount,num...)
-//       e.g. "BRA=1,2x3,5" means BRA1 (x2), BRA2 (x3), BRA5 (x2)
-//   M = missing (grouped by code, just numbers)
-// Then: zlib compress + base64 url-safe.
-
-function compactEncodeTradeList(name, dupsMap, missingArr){
-  const byCodeD = {};
-  Object.keys(dupsMap).forEach(id => {
-    const lastUnderscore = id.lastIndexOf('_');
-    const code = id.slice(0, lastUnderscore);
-    const num = id.slice(lastUnderscore + 1);
-    if(!byCodeD[code]) byCodeD[code] = [];
-    const cnt = dupsMap[id];
-    byCodeD[code].push(cnt > 2 ? `${num}x${cnt}` : num);
-  });
-  const byCodeM = {};
-  (missingArr || []).forEach(id => {
-    const lastUnderscore = id.lastIndexOf('_');
-    const code = id.slice(0, lastUnderscore);
-    const num = id.slice(lastUnderscore + 1);
-    if(!byCodeM[code]) byCodeM[code] = [];
-    byCodeM[code].push(num);
-  });
-  const parts = ['V:' + (name || 'Amigo')];
-  const dEntries = Object.keys(byCodeD).sort().map(c => `${c}=${byCodeD[c].join(',')}`);
-  if(dEntries.length) parts.push('D:' + dEntries.join(';'));
-  const mEntries = Object.keys(byCodeM).sort().map(c => `${c}=${byCodeM[c].join(',')}`);
-  if(mEntries.length) parts.push('M:' + mEntries.join(';'));
-  return parts.join('|');
-}
-
-function compactDecodeTradeList(text){
-  if(!text || typeof text !== 'string') return null;
-  const result = { name: 'Amigo', duplicates: {}, missing: [] };
-  const parts = text.split('|');
-  for(const part of parts){
-    const colonIdx = part.indexOf(':');
-    if(colonIdx < 0) continue;
-    const tag = part.slice(0, colonIdx);
-    const value = part.slice(colonIdx + 1);
-    if(tag === 'V') result.name = value || 'Amigo';
-    else if(tag === 'D'){
-      // CODE=nums;CODE=nums
-      value.split(';').forEach(entry => {
-        const eqIdx = entry.indexOf('=');
-        if(eqIdx < 0) return;
-        const code = entry.slice(0, eqIdx);
-        const nums = entry.slice(eqIdx + 1).split(',');
-        nums.forEach(n => {
-          const xIdx = n.indexOf('x');
-          let num, cnt;
-          if(xIdx > 0){
-            num = n.slice(0, xIdx);
-            cnt = parseInt(n.slice(xIdx + 1), 10);
-          } else {
-            num = n;
-            cnt = 2;
-          }
-          if(!num || !isFinite(cnt) || cnt < 2) return;
-          result.duplicates[code + '_' + num] = cnt;
-        });
-      });
-    }
-    else if(tag === 'M'){
-      value.split(';').forEach(entry => {
-        const eqIdx = entry.indexOf('=');
-        if(eqIdx < 0) return;
-        const code = entry.slice(0, eqIdx);
-        const nums = entry.slice(eqIdx + 1).split(',');
-        nums.forEach(n => {
-          if(n) result.missing.push(code + '_' + n);
-        });
-      });
-    }
-  }
-  return result;
-}
-
-// Base64 URL-safe (no padding)
-function b64UrlEncode(uint8){
-  let bin = '';
-  for(let i = 0; i < uint8.length; i++) bin += String.fromCharCode(uint8[i]);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-function b64UrlDecode(str){
-  const pad = (4 - (str.length % 4)) % 4;
-  const s = str.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(pad);
-  const bin = atob(s);
-  const out = new Uint8Array(bin.length);
-  for(let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-// Compress/decompress using browser-native CompressionStream (Chrome/Edge/Safari)
-// Fallback to uncompressed if unavailable.
-async function compress(str){
-  if(typeof CompressionStream === 'undefined'){
-    return new TextEncoder().encode(str);
-  }
-  const cs = new CompressionStream('deflate-raw');
-  const writer = cs.writable.getWriter();
-  writer.write(new TextEncoder().encode(str));
-  writer.close();
-  const chunks = [];
-  const reader = cs.readable.getReader();
-  while(true){
-    const {value, done} = await reader.read();
-    if(done) break;
-    chunks.push(value);
-  }
-  const total = chunks.reduce((a, c) => a + c.length, 0);
-  const out = new Uint8Array(total);
-  let off = 0;
-  for(const c of chunks){ out.set(c, off); off += c.length; }
-  return out;
-}
-async function decompress(uint8){
-  if(typeof DecompressionStream === 'undefined'){
-    return new TextDecoder().decode(uint8);
-  }
-  try{
-    const ds = new DecompressionStream('deflate-raw');
-    const writer = ds.writable.getWriter();
-    writer.write(uint8);
-    writer.close();
-    const chunks = [];
-    const reader = ds.readable.getReader();
-    while(true){
-      const {value, done} = await reader.read();
-      if(done) break;
-      chunks.push(value);
-    }
-    const total = chunks.reduce((a, c) => a + c.length, 0);
-    const out = new Uint8Array(total);
-    let off = 0;
-    for(const c of chunks){ out.set(c, off); off += c.length; }
-    return new TextDecoder().decode(out);
-  }catch(e){
-    // Try uncompressed fallback
-    return new TextDecoder().decode(uint8);
-  }
-}
-
-// Full pipeline: trade list → string → compressed → base64 url-safe
-async function encodeForQR(name, dupsMap, missingArr){
-  const compact = compactEncodeTradeList(name, dupsMap, missingArr);
-  const compressed = await compress(compact);
-  return b64UrlEncode(compressed);
-}
-async function decodeFromQR(b64){
-  const compressed = b64UrlDecode(b64);
-  const compact = await decompress(compressed);
-  return compactDecodeTradeList(compact);
-}
-
-// Build the share URL for the QR (and for sharing via WhatsApp as a link)
-function buildQRShareUrl(payload){
-  // Use current origin + path, with ?t=payload
-  // This way scanning the QR with any camera opens the app, ready to import
-  const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-  return base + '?t=' + payload;
-}
-
-// ====== QR DISPLAY ======
-async function openQRDisplay(){
-  const dupsUnique = myDuplicateIdsUnique();
-  if(dupsUnique.length === 0){
-    showToast('Você não tem repetidas pra compartilhar', 3000);
-    return;
-  }
-  if(typeof QRCode === 'undefined'){
-    showToast('Aguarde — carregando lib do QR...', 2000);
-    setTimeout(openQRDisplay, 800);
-    return;
-  }
-
-  const name = username || 'Eu';
-  const dupsMap = {};
-  dupsUnique.forEach(id => { dupsMap[id] = state[id]; });
-  const missing = myMissingIds();
-
-  const payload = await encodeForQR(name, dupsMap, missing);
-  const url = buildQRShareUrl(payload);
-
-  // Show modal
-  document.getElementById('qr-owner-name').textContent = `${name} · ${dupsUnique.length} repetidas · ${missing.length} faltando`;
-  document.getElementById('qr-summary').innerHTML =
-    `📦 <strong>${dupsUnique.length}</strong> figurinhas repetidas pra trocar · payload <strong>${payload.length}</strong> bytes`;
-
-  const canvas = document.getElementById('qr-canvas');
-  try{
-    await QRCode.toCanvas(canvas, url, {
-      errorCorrectionLevel: 'M',  // 15% — good balance for phone screens
-      margin: 2,
-      width: 420,
-      color: { dark: '#000000ff', light: '#ffffffff' }
-    });
-  }catch(e){
-    console.error('QR generation failed:', e);
-    showToast('Falha ao gerar QR: ' + (e?.message || e), 4000);
-    return;
-  }
-  document.getElementById('qr-display').classList.add('show');
-
-  // Try to keep screen bright while QR is showing (best effort, Chrome only)
-  try{
-    if('wakeLock' in navigator && !window._qrWakeLock){
-      window._qrWakeLock = await navigator.wakeLock.request('screen');
-    }
-  }catch(e){}
-}
-
-function closeQRDisplay(){
-  document.getElementById('qr-display').classList.remove('show');
-  if(window._qrWakeLock){
-    try{ window._qrWakeLock.release(); }catch(e){}
-    window._qrWakeLock = null;
-  }
-}
-
-// ====== QR SCANNER ======
-let qrScanStream = null;
-let qrScanRunning = false;
-
-async function openQRScanner(){
-  if(qrScanRunning) return;
-  if(typeof jsQR === 'undefined'){
-    showToast('Aguarde — carregando lib do scanner...', 2000);
-    setTimeout(openQRScanner, 800);
-    return;
-  }
-
-  const video = document.getElementById('qr-scan-video');
-  const statusEl = document.getElementById('qr-scan-status');
-  statusEl.textContent = 'Pedindo permissão da câmera...';
-  document.getElementById('qr-scan').classList.add('show');
-
-  try{
-    qrScanStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' },  // back camera
-      audio: false
-    });
-  }catch(e){
-    console.error('Camera access failed:', e);
-    statusEl.textContent = 'Permissão de câmera negada';
-    showToast('Permita o acesso à câmera no navegador', 4000);
-    setTimeout(closeQRScanner, 1500);
-    return;
-  }
-
-  video.srcObject = qrScanStream;
-  await video.play();
-  statusEl.textContent = 'Aponte pro QR do amigo';
-  qrScanRunning = true;
-  scanLoop();
-}
-
-function closeQRScanner(){
-  qrScanRunning = false;
-  if(qrScanStream){
-    qrScanStream.getTracks().forEach(t => t.stop());
-    qrScanStream = null;
-  }
-  const video = document.getElementById('qr-scan-video');
-  if(video) video.srcObject = null;
-  document.getElementById('qr-scan').classList.remove('show');
-}
-
-async function scanLoop(){
-  if(!qrScanRunning) return;
-  const video = document.getElementById('qr-scan-video');
-  const statusEl = document.getElementById('qr-scan-status');
-
-  if(video.readyState !== video.HAVE_ENOUGH_DATA){
-    requestAnimationFrame(scanLoop);
-    return;
-  }
-
-  // Get current frame on a canvas
-  const canvas = document.createElement('canvas');
-  const w = video.videoWidth, h = video.videoHeight;
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(video, 0, 0, w, h);
-
-  let scanned = null;
-
-  // Try native BarcodeDetector first (faster, more accurate)
-  if('BarcodeDetector' in window){
-    try{
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
-      const results = await detector.detect(canvas);
-      if(results && results.length) scanned = results[0].rawValue;
-    }catch(e){
-      // Fall through to jsQR
-    }
-  }
-
-  // Fallback to jsQR
-  if(!scanned){
-    try{
-      const imageData = ctx.getImageData(0, 0, w, h);
-      const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
-      if(code && code.data) scanned = code.data;
-    }catch(e){}
-  }
-
-  if(scanned){
-    qrScanRunning = false;
-    statusEl.textContent = '✓ QR lido! Importando...';
-    vibrate(80);
-    await handleScannedQR(scanned);
-    return;
-  }
-
-  // Continue scanning
-  requestAnimationFrame(scanLoop);
-}
-
-async function handleScannedQR(rawValue){
-  // The QR may contain:
-  //   - A full URL with ?t=PAYLOAD (from this app)
-  //   - Just the PAYLOAD (rare but allow it)
-  let payload = rawValue;
-  try{
-    const url = new URL(rawValue);
-    const t = url.searchParams.get('t');
-    if(t) payload = t;
-  }catch(e){
-    // not a URL — treat as raw payload
-  }
-
-  let decoded;
-  try{
-    decoded = await decodeFromQR(payload);
-  }catch(e){
-    console.error('QR decode failed:', e);
-    showToast('QR inválido ou de outro app', 4000);
-    closeQRScanner();
-    return;
-  }
-
-  if(!decoded || !decoded.duplicates || Object.keys(decoded.duplicates).length === 0){
-    showToast('Nenhuma repetida encontrada no QR', 4000);
-    closeQRScanner();
-    return;
-  }
-
-  // Validate sticker IDs
-  const valid = new Set(allStickerIds());
-  const dupList = Object.keys(decoded.duplicates).filter(id => valid.has(id));
-  const dupCountMap = {};
-  dupList.forEach(id => dupCountMap[id] = decoded.duplicates[id]);
-  const missing = (decoded.missing || []).filter(id => valid.has(id));
-
-  if(dupList.length === 0){
-    showToast('Nenhuma figurinha válida no QR', 4000);
-    closeQRScanner();
-    return;
-  }
-
-  // Save as friend — if name exists, update; otherwise create
-  const name = decoded.name || 'Amigo';
-  const existing = friends.find(f => f.name.toLowerCase() === name.toLowerCase());
-
-  if(existing){
-    existing.dups = dupList;
-    existing.dupCounts = dupCountMap;
-    existing.missing = missing;
-    existing.updatedAt = new Date().toISOString();
-  } else {
-    friends.push({
-      id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-      name, dups: dupList, dupCounts: dupCountMap, missing: missing,
-      addedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-  }
-  await saveFriends();
-
-  closeQRScanner();
-  // Switch to trades view to show the result
-  document.querySelector('.main-tab[data-view="trades"]').click();
-  showToast(`✓ ${name} ${existing ? 'atualizado' : 'adicionado'} via QR (${dupList.length} repetidas)`, 3500);
-}
-
-// Handle ?t=... URL on app load — auto-import from QR scan via native camera
-async function handleQRParamFromUrl(){
-  const params = new URLSearchParams(window.location.search);
-  const t = params.get('t');
-  if(!t) return;
-
-  // Clean the URL so reloads don't re-import
-  history.replaceState(null, '', window.location.pathname);
-
-  let decoded;
-  try{
-    decoded = await decodeFromQR(t);
-  }catch(e){
-    console.error('URL QR decode failed:', e);
-    showToast('Link de QR inválido', 4000);
-    return;
-  }
-
-  if(!decoded || !decoded.duplicates) return;
-
-  const valid = new Set(allStickerIds());
-  const dupList = Object.keys(decoded.duplicates).filter(id => valid.has(id));
-  if(dupList.length === 0) return;
-
-  const dupCountMap = {};
-  dupList.forEach(id => dupCountMap[id] = decoded.duplicates[id]);
-  const missing = (decoded.missing || []).filter(id => valid.has(id));
-  const name = decoded.name || 'Amigo';
-
-  // Show confirmation modal before importing (URL might be opened accidentally)
-  openModal({
-    title: `Importar de ${name}?`,
-    body: `Detectamos uma lista de troca compartilhada via QR/link com ${dupList.length} repetidas${missing.length ? ` e ${missing.length} faltantes` : ''}.`,
-    content: `<p style="font-size:13px;color:var(--ink-dim);line-height:1.5;">Salvar como amigo "<strong style="color:var(--ink);">${escapeHtml(name)}</strong>" para ver sugestões de troca?</p>`,
-    actions:[
-      {label:'Cancelar', class:'', action:()=>closeModal()},
-      {label:`Importar ${name}`, class:'primary', action: async () => {
-        const existing = friends.find(f => f.name.toLowerCase() === name.toLowerCase());
-        if(existing){
-          existing.dups = dupList;
-          existing.dupCounts = dupCountMap;
-          existing.missing = missing;
-          existing.updatedAt = new Date().toISOString();
-        } else {
-          friends.push({
-            id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
-            name, dups: dupList, dupCounts: dupCountMap, missing: missing,
-            addedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-        await saveFriends();
-        closeModal();
-        // Go to trades view
-        document.querySelector('.main-tab[data-view="trades"]').click();
-        showToast(`✓ ${name} ${existing ? 'atualizado' : 'adicionado'} (${dupList.length} repetidas)`, 3500);
-      }}
-    ]
-  });
-}
-
 async function doExport(type){
   const isTrade = type === 'trade';
   const nameInput = document.getElementById('export-name');
@@ -2336,10 +1753,6 @@ document.getElementById('btn-reset').addEventListener('click', ()=>{
 // ====== SHARE THE APP (zerado) ======
 document.getElementById('btn-share-app').addEventListener('click', shareAppToFriends);
 document.getElementById('estimate-config-btn').addEventListener('click', openPackConfigModal);
-document.getElementById('btn-show-qr').addEventListener('click', openQRDisplay);
-document.getElementById('btn-scan-qr').addEventListener('click', openQRScanner);
-document.getElementById('qr-display-close').addEventListener('click', closeQRDisplay);
-document.getElementById('qr-scan-close').addEventListener('click', closeQRScanner);
 
 async function shareAppToFriends(){
   const appUrl = window.location.href.split('#')[0];
@@ -2590,4 +2003,508 @@ function parseTextStickerList(text){
       // Use word-boundary-ish detection
       const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(`\\b${escaped}[\\s\\-]*(\\d{1,2})\\b(?:[\\s]*[\\(\\[]?[\\s]*[xX×][\\s]*(\\d{1,2}))?`, 'g');
-      let 
+      let mm;
+      while((mm = re.exec(lineLower)) !== null){
+        const code = nameToCode[name];
+        const id = canonicalStickerId(code, mm[1]);
+        if(!id) continue;
+        const mult = mm[2] ? parseInt(mm[2], 10) : 2;
+        const safeMult = Math.max(2, Math.min(20, mult));
+        found[id] = Math.max(found[id] || 0, safeMult);
+      }
+    });
+  });
+
+  const dupList = Object.keys(found);
+  if(dupList.length === 0) return null;
+  return { dupList, dupCounts: found };
+}
+
+// Convert (code, numStr) → canonical stickerId, validating ranges
+function canonicalStickerId(code, numStr){
+  const num = parseInt(numStr, 10);
+  if(!isFinite(num)) return null;
+  if(code === 'FWC'){
+    // Special: '00' is valid, plus 1-19
+    if(numStr === '00' || numStr === '0') return 'FWC_00';
+    if(num >= 1 && num <= 19) return 'FWC_' + num;
+    return null;
+  }
+  if(code === 'CC'){
+    if(num >= 1 && num <= 14) return 'CC_' + num;
+    return null;
+  }
+  if(!CODE_TO_COUNTRY[code]) return null;
+  if(num >= 1 && num <= 20) return code + '_' + num;
+  return null;
+}
+
+async function doAddFriend(existingFriend){
+  let txt = document.getElementById('friend-text').value.trim();
+  if(!txt){ showToast('Selecione o arquivo .json ou cole o texto', 3000); return; }
+
+  let dupList = [];
+  let dupCountMap = {};
+  let missingRaw = [];
+  let ownerFromFile = null;
+  let parseMode = '';  // 'json' or 'text', for the toast feedback
+
+  // ----- TRY 1: JSON (from this app or compatible apps) -----
+  // First, try to extract a {...} block in case it's surrounded by header text
+  let jsonCandidate = txt;
+  if(!txt.startsWith('{')){
+    const firstBrace = txt.indexOf('{');
+    const lastBrace = txt.lastIndexOf('}');
+    if(firstBrace >= 0 && lastBrace > firstBrace){
+      jsonCandidate = txt.slice(firstBrace, lastBrace + 1);
+    }
+  }
+
+  let jsonParsed = null;
+  try{ jsonParsed = JSON.parse(jsonCandidate); }catch(e){}
+
+  if(jsonParsed && (jsonParsed.duplicates || jsonParsed.dups || jsonParsed.data)){
+    parseMode = 'json';
+    const dupsRaw = jsonParsed.duplicates || jsonParsed.dups || jsonParsed.data;
+    missingRaw = jsonParsed.missing || [];
+    ownerFromFile = jsonParsed.owner || null;
+
+    if(Array.isArray(dupsRaw)){
+      dupsRaw.forEach(id => {
+        if(typeof id === 'string' && id.includes('_')){
+          dupList.push(id);
+          dupCountMap[id] = 2;
+        }
+      });
+    } else if(typeof dupsRaw === 'object'){
+      Object.keys(dupsRaw).forEach(id => {
+        const c = dupsRaw[id];
+        if(typeof c === 'number'){
+          if(c >= 2){ dupList.push(id); dupCountMap[id] = c; }
+        } else {
+          dupList.push(id);
+          dupCountMap[id] = 2;
+        }
+      });
+    }
+  }
+
+  // ----- TRY 2: Free-form text (from other apps) -----
+  if(dupList.length === 0){
+    const textResult = parseTextStickerList(txt);
+    if(textResult){
+      parseMode = 'text';
+      dupList = textResult.dupList;
+      dupCountMap = textResult.dupCounts;
+    }
+  }
+
+  // ----- VALIDATION -----
+  const valid = new Set(allStickerIds());
+  dupList = dupList.filter(id => valid.has(id));
+
+  if(dupList.length === 0){
+    // Couldn't parse anything
+    const looksLikeTruncatedJson = txt.startsWith('{') && !txt.trim().endsWith('}');
+    if(looksLikeTruncatedJson){
+      showToast('JSON cortado — peça o arquivo .json original', 4000);
+    } else if(jsonParsed){
+      showToast('JSON sem repetidas válidas', 3000);
+    } else {
+      showToast('Nenhuma figurinha encontrada no texto. Tente colar o arquivo .json.', 4000);
+    }
+    return;
+  }
+
+  // ----- NAME -----
+  let name;
+  if(existingFriend){
+    name = existingFriend.name;
+  } else {
+    const inputName = document.getElementById('friend-name-input').value.trim();
+    name = inputName || ownerFromFile || 'Amigo';
+  }
+
+  // ----- SAVE -----
+  if(existingFriend){
+    existingFriend.dups = dupList;
+    existingFriend.dupCounts = dupCountMap;
+    existingFriend.missing = missingRaw;
+    existingFriend.updatedAt = new Date().toISOString();
+  } else {
+    friends.push({
+      id: 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      name, dups: dupList, dupCounts: dupCountMap, missing: missingRaw,
+      addedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  await saveFriends();
+  closeModal();
+  renderTradesView();
+  const action = existingFriend ? 'atualizado' : 'adicionado';
+  if(parseMode === 'text'){
+    showToast(`✓ ${name} ${action} (${dupList.length} repetidas detectadas no texto)`, 3500);
+  } else {
+    showToast(`✓ ${name} ${action} (${dupList.length} repetidas)`, 2500);
+  }
+}
+
+function renderTradesView(){
+  renderFriendsList();
+  renderMyDupsList();
+}
+
+function renderFriendsList(){
+  const wrap = document.getElementById('friends-list');
+  wrap.innerHTML = '';
+  document.getElementById('suggestions-count').textContent = `${friends.length} amigo${friends.length===1?'':'s'}`;
+
+  if(friends.length === 0){
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">🤝</div>
+        <div class="empty-state-title">Nenhum amigo cadastrado</div>
+        <div class="empty-state-text">Importe a lista de repetidas de um colega para ver sugestões de trocas que beneficiam os dois.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const myDupsUnique = new Set(myDuplicateIdsUnique());
+  const myMissing = new Set(myMissingIds());
+
+  friends.forEach(friend => {
+    const card = document.createElement('div');
+    card.className = 'friend-card';
+    const initial = friend.name.charAt(0).toUpperCase();
+    const friendMissing = friend.missing && friend.missing.length ? new Set(friend.missing) : null;
+
+    let canGet = [...friend.dups].filter(id => myMissing.has(id));
+    let canGive;
+    if(friendMissing){
+      canGive = [...myDupsUnique].filter(id => friendMissing.has(id));
+    } else {
+      canGive = [...myDupsUnique];
+    }
+    const tradeSize = Math.min(canGive.length, canGet.length);
+    const giveSelection = canGive.slice(0, tradeSize);
+    const getSelection = canGet.slice(0, tradeSize);
+
+    card.innerHTML = `
+      <div class="friend-card-header">
+        <div class="friend-name">
+          <div class="friend-avatar">${initial}</div>
+          <span>${escapeHtml(friend.name)}</span>
+        </div>
+        <div class="friend-actions">
+          <button class="icon-btn" data-action="update" title="Substituir lista">↻</button>
+          <button class="icon-btn" data-action="delete" title="Remover amigo">✕</button>
+        </div>
+      </div>
+      <div class="friend-meta">
+        ${friend.dups.length} repetida${friend.dups.length===1?'':'s'} · ${friendMissing ? friendMissing.size + ' faltando' : 'faltantes não informados'} · atualizado ${formatRelativeDate(friend.updatedAt)}
+      </div>
+      ${tradeSize > 0 ? (() => {
+        // Calculate trade value: only pack stickers (excluding CC) have monetary value
+        const ps = packStickerStats();
+        const packGetCount = getSelection.filter(id => !id.startsWith('CC_')).length;
+        const ccGetCount = getSelection.length - packGetCount;
+        const tradeVal = totalTradeValue(ps.have, packGetCount);
+        const valStr = tradeVal > 0 ? `~${fmtBRL(tradeVal)}` : '';
+        return `
+        <div class="trade-suggestion">
+          <div class="trade-suggestion-header">
+            <div class="trade-suggestion-title">✓ Troca sugerida</div>
+            <div class="trade-count">${tradeSize}↔${tradeSize}</div>
+          </div>
+          <div class="trade-cols">
+            <div>
+              <div class="trade-col-label">Você dá (${giveSelection.length})</div>
+              <div class="trade-chip-list">${giveSelection.map(id => `<span class="trade-chip give">${formatStickerId(id)}</span>`).join('')}</div>
+            </div>
+            <div class="trade-arrow">⇄</div>
+            <div>
+              <div class="trade-col-label">Você recebe (${getSelection.length})</div>
+              <div class="trade-chip-list">${getSelection.map(id => `<span class="trade-chip get">${formatStickerId(id)}</span>`).join('')}</div>
+            </div>
+          </div>
+          ${valStr ? `<div class="trade-value-line">💰 Equivale a ${valStr} em pacotes evitados${ccGetCount > 0 ? ` (+${ccGetCount} CC promocional)` : ''}</div>` : ''}
+          <div class="trade-suggestion-actions">
+            <button class="btn compact primary" data-action="confirm-trade">✓ Marcar troca feita</button>
+            <button class="btn compact" data-action="view-all">Ver tudo</button>
+          </div>
+        </div>
+      `;})() : `
+        <div class="trade-suggestion" style="background:rgba(244,241,232,0.03);border-color:var(--line);">
+          <div class="trade-suggestion-title" style="color:var(--ink-dim);">
+            ${canGive.length === 0 && canGet.length === 0
+              ? 'Nada para trocar agora'
+              : canGet.length === 0
+                ? 'Seu amigo não tem repetidas que você precisa'
+                : 'Você não tem repetidas que seu amigo precisa'}
+          </div>
+          ${canGet.length > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--ink-dim);">Ele tem ${canGet.length} que você precisa.</div>` : ''}
+          ${canGive.length > 0 && !friendMissing ? `<div style="margin-top:8px;font-size:11px;color:var(--ink-dim);">Você tem ${canGive.length} repetidas, mas a lista de faltantes do amigo não foi enviada.</div>` : ''}
+        </div>
+      `}
+    `;
+
+    card.querySelector('[data-action="update"]').addEventListener('click', () => openAddFriendModal(friend));
+    card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteFriend(friend));
+    const confirmBtn = card.querySelector('[data-action="confirm-trade"]');
+    if(confirmBtn) confirmBtn.addEventListener('click', () => confirmTrade(friend, giveSelection, getSelection));
+    const viewAllBtn = card.querySelector('[data-action="view-all"]');
+    if(viewAllBtn) viewAllBtn.addEventListener('click', () => openFullTradeView(friend, canGive, canGet, friendMissing));
+    wrap.appendChild(card);
+  });
+}
+
+function openFullTradeView(friend, canGive, canGet, friendMissing){
+  const giveHtml = canGive.length
+    ? `<div class="trade-chip-list">${canGive.map(id => `<span class="trade-chip give">${formatStickerId(id)}</span>`).join('')}</div>`
+    : `<div style="color:var(--ink-dim);font-size:12px;">Nenhuma.</div>`;
+  const getHtml = canGet.length
+    ? `<div class="trade-chip-list">${canGet.map(id => `<span class="trade-chip get">${formatStickerId(id)}</span>`).join('')}</div>`
+    : `<div style="color:var(--ink-dim);font-size:12px;">Nenhuma.</div>`;
+  openModal({
+    title:`Trocas com ${friend.name}`,
+    body: friendMissing ? 'Tudo que vocês podem trocar.' : 'Seu amigo não enviou faltantes; mostramos suas repetidas — confirme com ele.',
+    content:`
+      <div class="label-small" style="color:var(--gold);">Você pode dar (${canGive.length})</div>
+      ${giveHtml}
+      <div class="label-small" style="margin-top:14px;color:var(--green);">Você pode receber (${canGet.length})</div>
+      ${getHtml}
+    `,
+    actions:[{label:'Fechar', class:'', action:()=>closeModal()}]
+  });
+}
+
+function confirmTrade(friend, giveList, getList){
+  const ps = packStickerStats();
+  const packGetCount = getList.filter(id => !id.startsWith('CC_')).length;
+  const tradeVal = totalTradeValue(ps.have, packGetCount);
+  const valueLine = tradeVal > 0
+    ? `<div class="trade-value-line" style="margin-bottom:14px;">💰 Valor estimado dessa troca: <strong>${fmtBRL(tradeVal)}</strong> em pacotes que você não precisa comprar.</div>`
+    : '';
+  openModal({
+    title:'Confirmar troca?',
+    body:`Trocar ${giveList.length} repetidas suas por ${getList.length} novas de ${friend.name}.`,
+    content:`
+      ${valueLine}
+      <div class="label-small" style="color:var(--gold);">Você dá (${giveList.length}):</div>
+      <div class="trade-chip-list" style="margin-bottom:12px;">${giveList.map(id => `<span class="trade-chip give">${formatStickerId(id)}</span>`).join('')}</div>
+      <div class="label-small" style="color:var(--green);">Você recebe (${getList.length}):</div>
+      <div class="trade-chip-list">${getList.map(id => `<span class="trade-chip get">${formatStickerId(id)}</span>`).join('')}</div>
+    `,
+    actions:[
+      {label:'Cancelar', class:'', action:()=>closeModal()},
+      {label:'Confirmar troca', class:'primary', action: async () => {
+        giveList.forEach(id => {
+          const c = getCount(id);
+          if(c > 0) setCount(id, c - 1);
+        });
+        getList.forEach(id => {
+          const c = getCount(id);
+          if(c === 0) setCount(id, 1);
+        });
+        friend.dups = friend.dups.filter(id => !getList.includes(id));
+        if(friend.dupCounts) getList.forEach(id => delete friend.dupCounts[id]);
+        if(friend.missing && Array.isArray(friend.missing)){
+          friend.missing = friend.missing.filter(id => !giveList.includes(id));
+        }
+        await saveFriends();
+        closeModal();
+        renderAll();
+        if(tradeVal > 0){
+          showToast(`✓ Troca confirmada · economia de ~${fmtBRL(tradeVal)}`, 3500);
+        } else {
+          showToast(`✓ Troca confirmada: −${giveList.length} +${getList.length}`, 2500);
+        }
+      }}
+    ]
+  });
+}
+
+function deleteFriend(friend){
+  openModal({
+    title:`Remover ${friend.name}?`,
+    body:'Os dados desse amigo serão apagados.',
+    content:'',
+    actions:[
+      {label:'Cancelar', class:'', action:()=>closeModal()},
+      {label:'Remover', class:'danger', action: async () => {
+        friends = friends.filter(f => f.id !== friend.id);
+        await saveFriends();
+        closeModal();
+        renderTradesView();
+        showToast('Amigo removido');
+      }}
+    ]
+  });
+}
+
+function renderMyDupsList(){
+  const wrap = document.getElementById('dups-list');
+  wrap.innerHTML = '';
+  const dupTotal = myDuplicateIds().length;
+  document.getElementById('dups-count').textContent = `${dupTotal} repetida${dupTotal===1?'':'s'}`;
+
+  if(dupTotal === 0){
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">✨</div>
+        <div class="empty-state-title">Sem repetidas!</div>
+        <div class="empty-state-text">Quando você marcar figurinhas como repetidas (toque duplo), elas aparecerão aqui agrupadas.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const groupMap = new Map();
+  const ensureGroup = (key, label) => {
+    if(!groupMap.has(key)) groupMap.set(key, {label, countries: new Map()});
+    return groupMap.get(key);
+  };
+  const ensureCountry = (group, code) => {
+    if(!group.countries.has(code)){
+      const info = CODE_TO_COUNTRY[code];
+      group.countries.set(code, {code, name: info ? info.name : code, items: []});
+    }
+    return group.countries.get(code);
+  };
+
+  Object.keys(state).forEach(id => {
+    const count = state[id];
+    if(count < 2) return;
+    const [code] = id.split('_');
+    const info = CODE_TO_COUNTRY[code];
+    if(!info) return;
+    let groupLabel;
+    if(code === 'FWC') groupLabel = 'Capa & FIFA History';
+    else if(code === 'CC') groupLabel = 'Coca-Cola';
+    else groupLabel = 'Grupo ' + info.group;
+    const g = ensureGroup(info.group, groupLabel);
+    const c = ensureCountry(g, code);
+    c.items.push({id, count});
+  });
+
+  const order = ['A','B','C','D','E','F','G','H','I','J','K','L','FWC','CC'];
+  const sortedKeys = Array.from(groupMap.keys()).sort((a,b) => order.indexOf(a) - order.indexOf(b));
+
+  sortedKeys.forEach(key => {
+    const g = groupMap.get(key);
+    const countriesArr = Array.from(g.countries.values());
+    let totalDups = 0;
+    countriesArr.forEach(c => c.items.forEach(it => totalDups += it.count - 1));
+    const groupEl = document.createElement('div');
+    groupEl.className = 'dup-group open';
+    groupEl.innerHTML = `
+      <div class="dup-group-header">
+        <div class="dup-group-title">
+          <span>${g.label}</span>
+          <span class="dup-group-count">${totalDups}</span>
+        </div>
+        <span class="dup-group-chevron">▼</span>
+      </div>
+      <div class="dup-group-body"></div>
+    `;
+    const body = groupEl.querySelector('.dup-group-body');
+
+    countriesArr.sort((a,b) => a.name.localeCompare(b.name));
+    countriesArr.forEach(c => {
+      const countryWrap = document.createElement('div');
+      countryWrap.style.marginBottom = '10px';
+      let countryDupCount = 0;
+      c.items.forEach(it => countryDupCount += it.count - 1);
+      countryWrap.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;">
+            ${c.name} <span class="country-code">${c.code}</span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-dim);">${countryDupCount} rep</div>
+        </div>
+        <div class="dup-sticker-list"></div>
+      `;
+      const list = countryWrap.querySelector('.dup-sticker-list');
+      c.items.sort((a,b) => {
+        const na = parseInt(a.id.split('_')[1].replace(/\D/g,''), 10) || 0;
+        const nb = parseInt(b.id.split('_')[1].replace(/\D/g,''), 10) || 0;
+        return na - nb;
+      });
+      c.items.forEach(it => {
+        const num = it.id.split('_')[1];
+        const chip = document.createElement('div');
+        chip.className = 'dup-sticker';
+        chip.innerHTML = `
+          <span>${c.code} ${num}</span>
+          ${it.count > 2 ? `<span class="dup-badge">×${it.count - 1}</span>` : ''}
+          <span class="minus" title="Dar baixa em 1">−</span>
+        `;
+        chip.querySelector('.minus').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cur = getCount(it.id);
+          if(cur > 0){
+            setCount(it.id, cur - 1);
+            renderAll();
+            showToast(`Baixa em ${c.code} ${num}`);
+          }
+        });
+        list.appendChild(chip);
+      });
+      body.appendChild(countryWrap);
+    });
+
+    groupEl.querySelector('.dup-group-header').addEventListener('click', () => {
+      groupEl.classList.toggle('open');
+    });
+    wrap.appendChild(groupEl);
+  });
+}
+
+// ====== UTILS ======
+function downloadFile(content, filename, mime){
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+function formatRelativeDate(iso){
+  if(!iso) return 'agora';
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diff = Math.floor((now - then) / 1000);
+  if(diff < 60) return 'agora';
+  if(diff < 3600) return Math.floor(diff/60) + 'min atrás';
+  if(diff < 86400) return Math.floor(diff/3600) + 'h atrás';
+  if(diff < 86400*30) return Math.floor(diff/86400) + 'd atrás';
+  return new Date(iso).toLocaleDateString('pt-BR');
+}
+
+// ====== Modal ======
+function openModal({title, body, content, actions}){
+  document.getElementById('modal-title').textContent = title;
+  const bodyEl = document.getElementById('modal-body');
+  bodyEl.textContent = body || '';
+  bodyEl.style.display = body ? '' : 'none';
+  document.getElementById('modal-content').innerHTML = content || '';
+  const actEl = document.getElementById('modal-actions');
+  actEl.innerHTML = '';
+  (actions || []).forEach(a=>{
+    const b = document.createElement('button');
+    b.className = 'btn '+(a.class||'');
+    b.textContent = a.label;
+    b.addEventListener('click', a.action);
+    actEl.appendChild(b);
+  });
+  document.getElementById('modal').classList.add('show');
