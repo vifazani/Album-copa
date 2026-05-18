@@ -595,7 +595,7 @@ details[open] summary::before{content:'▾ ';}
       <div class="estimate-header">
         <div>
           <div class="estimate-label">📊 Estimativa estatística</div>
-          <div class="estimate-sublabel">Comprando pacotes (sem trocar)</div>
+          <div class="estimate-sublabel">Pacotes Panini · 980 figs (sem Coca-Cola)</div>
         </div>
         <button class="estimate-config-btn" id="estimate-config-btn" title="Configurar preço do pacote">⚙</button>
       </div>
@@ -1158,7 +1158,7 @@ function renderEstimate(_unusedStats){
     tipEl.innerHTML = '🏆 <strong>Parabéns!</strong> Álbum 100% completo (figurinhas Coca-Cola não contam aqui).';
   } else {
     packsEl.textContent = fmtInt(packsToGo);
-    packsExtra.textContent = `≈ ${fmtBRL(packsToGo * price)} · ${fmtInt(packsToGo * PACK_SIZE)} figs`;
+    packsExtra.textContent = `≈ ${fmtBRL(packsToGo * price)} no total`;
 
     // Dynamic tip
     if(ps.missing <= 5){
