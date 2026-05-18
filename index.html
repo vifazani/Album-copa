@@ -2508,3 +2508,116 @@ function openModal({title, body, content, actions}){
     actEl.appendChild(b);
   });
   document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+document.getElementById('modal').addEventListener('click', e=>{
+  if(e.target.id==='modal') closeModal();
+});
+
+let toastTimer = null;
+function showToast(msg, duration){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), duration || 1400);
+}
+function vibrate(ms){
+  if(navigator.vibrate){ try{ navigator.vibrate(ms); }catch(e){} }
+}
+
+// ====== PWA / INSTALL ======
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  showInstallBanner();
+  document.getElementById('btn-install').style.display = 'inline-flex';
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  hideInstallBanner();
+  showToast('App instalado!');
+});
+
+async function setupInstallBanner(){
+  const dismissed = await storageAdapter.get(INSTALL_DISMISSED_KEY);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if(isStandalone) return;
+  if(dismissed) return;
+
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+
+  if(isIOSSafari){
+    document.getElementById('install-hint').innerHTML = ' Toque em <strong>Compartilhar</strong> → <strong>"Adicionar à Tela de Início"</strong>.';
+    showInstallBanner();
+  } else if(/Android/.test(ua) && !deferredInstallPrompt){
+    document.getElementById('install-hint').textContent = ' Menu do navegador → "Instalar app" ou "Adicionar à tela inicial".';
+    showInstallBanner();
+  }
+}
+
+function showInstallBanner(){ document.getElementById('install-banner').classList.remove('hidden'); }
+function hideInstallBanner(){ document.getElementById('install-banner').classList.add('hidden'); }
+
+document.getElementById('btn-install').addEventListener('click', async () => {
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  if(choice.outcome === 'accepted') showToast('Instalando...');
+  deferredInstallPrompt = null;
+});
+document.getElementById('btn-dismiss-install').addEventListener('click', async () => {
+  hideInstallBanner();
+  await storageAdapter.set(INSTALL_DISMISSED_KEY, '1');
+});
+
+// Manifest (inline blob)
+function setupManifest(){
+  if(window.location.href.startsWith('file:')) return; // manifest needs http(s)
+  try{
+    const manifest = {
+      name: 'Álbum Copa 2026 — Tracker',
+      short_name: 'Álbum 2026',
+      description: 'Tracker de figurinhas do álbum da Copa do Mundo 2026',
+      start_url: window.location.pathname,
+      scope: window.location.pathname.replace(/[^/]*$/, ''),
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#0b0f1a',
+      theme_color: '#0b0f1a',
+      icons: [
+        {
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%2319c37d'/%3E%3Ctext x='256' y='360' font-family='Arial Black,sans-serif' font-size='340' font-weight='900' text-anchor='middle' fill='%230b0f1a'%3E★%3C/text%3E%3C/svg%3E",
+          sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable'
+        },
+        {
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='42' fill='%2319c37d'/%3E%3Ctext x='96' y='135' font-family='Arial Black,sans-serif' font-size='128' font-weight='900' text-anchor='middle' fill='%230b0f1a'%3E★%3C/text%3E%3C/svg%3E",
+          sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable'
+        }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = url;
+    document.head.appendChild(link);
+  }catch(e){}
+}
+
+// ====== INIT ======
+(async function init(){
+  setupManifest();
+  await loadState();
+  renderAll();
+  await setupInstallBanner();
+})();
+</script>
+</body>
+</html>
